@@ -6173,8 +6173,11 @@ sptr_t Editor::WndProc(unsigned int iMessage, uptr_t wParam, sptr_t lParam) {
 		return 0;
 
 	case SCI_DELETERANGE:
-		pdoc->DeleteChars(static_cast<Sci::Position>(wParam), lParam);
+		pdoc->DeleteChars(static_cast<Sci::Position>(wParam), static_cast<Sci::Position>(lParam));
 		return 0;
+	
+	case SCI_DELETECHAR:
+		pdoc->DelChar(static_cast<Sci::Position>(wParam));
 
 	case SCI_CLEARDOCUMENTSTYLE:
 		ClearDocumentStyle();

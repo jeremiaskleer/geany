@@ -59,6 +59,8 @@
 
 #include "gtkcompat.h"
 
+
+
 #include <ctype.h>
 #include <string.h>
 
@@ -97,6 +99,7 @@ static gboolean handle_xml(GeanyEditor *editor, gint pos, gchar ch);
 static void insert_indent_after_line(GeanyEditor *editor, gint line);
 static void auto_multiline(GeanyEditor *editor, gint pos);
 static void auto_close_chars(ScintillaObject *sci, gint pos, gchar c);
+static gboolean auto_close_chars_consume(ScintillaObject *sci, gint pos, gchar c);
 static void close_block(GeanyEditor *editor, gint pos);
 static void editor_highlight_braces(GeanyEditor *editor, gint cur_pos);
 static void read_current_word(GeanyEditor *editor, gint pos, gchar *word, gsize wordlen,
@@ -832,8 +835,15 @@ static void on_char_added(GeanyEditor *editor, SCNotification *nt)
 			editor_show_calltip(editor, --pos);
 			break;
 		}
+		case '{':
+		case '[':
+		{
+			auto_close_chars(sci, pos, nt->ch);
+			break;
+		}
 		case ')':
-		{	/* hide calltips */
+		{	
+			/* hide calltips */
 			if (SSM(sci, SCI_CALLTIPACTIVE, 0, 0))
 			{
 				SSM(sci, SCI_CALLTIPCANCEL, 0, 0);
@@ -843,20 +853,27 @@ static void on_char_added(GeanyEditor *editor, SCNotification *nt)
 			calltip.pos = 0;
 			calltip.sci = NULL;
 			calltip.set = FALSE;
-			break;
+			//~ break;
 		}
-		case '{':
-		case '[':
-		case '"':
-		case '\'':
+		case ']':
 		{
-			auto_close_chars(sci, pos, nt->ch);
+			auto_close_chars_consume(sci, pos, nt->ch);
 			break;
 		}
 		case '}':
-		{	/* closing bracket handling */
+		{	
+			auto_close_chars_consume(sci, pos, nt->ch);
+			/* closing bracket handling */
 			if (editor->auto_indent)
 				close_block(editor, pos - 1);
+			break;
+		}
+		case '"':
+		case '\'':
+		{
+			if( ! auto_close_chars_consume(sci, pos, nt->ch) ) {
+				auto_close_chars(sci, pos, nt->ch);
+			}
 			break;
 		}
 		/* scope autocompletion */
@@ -1516,6 +1533,40 @@ static void insert_indent_after_line(GeanyEditor *editor, gint line)
 	g_free(text);
 }
 
+static gboolean auto_close_chars_consume(ScintillaObject *sci, gint pos, gchar c) {
+	gboolean isAutoClosed = FALSE;
+	switch (c)
+	{
+		case ')':
+			if ((editor_prefs.autoclose_chars & GEANY_AC_PARENTHESIS) && (editor_prefs.autoclose_chars_consume & GEANY_AC_PARENTHESIS))
+				isAutoClosed = TRUE;
+			break;
+		case '}':
+			if ((editor_prefs.autoclose_chars & GEANY_AC_CBRACKET) && (editor_prefs.autoclose_chars_consume & GEANY_AC_CBRACKET))
+				isAutoClosed = TRUE;
+			break;
+		case ']':
+			if ((editor_prefs.autoclose_chars & GEANY_AC_SBRACKET) && (editor_prefs.autoclose_chars_consume & GEANY_AC_SBRACKET))
+				isAutoClosed = TRUE;
+			break;
+		case '\'':
+			if ((editor_prefs.autoclose_chars & GEANY_AC_SQUOTE) && (editor_prefs.autoclose_chars_consume & GEANY_AC_SQUOTE))
+				isAutoClosed = TRUE;
+			break;
+		case '"':
+			if ((editor_prefs.autoclose_chars & GEANY_AC_DQUOTE) && (editor_prefs.autoclose_chars_consume & GEANY_AC_DQUOTE))
+				isAutoClosed = TRUE;
+			break;
+	}
+	
+	gchar cNext = sci_get_char_at( sci, pos);
+	
+	if( isAutoClosed && cNext == c ) {
+		sci_delete_char(sci, pos);
+		return TRUE;
+	}
+	return FALSE;
+}
 
 static void auto_close_chars(ScintillaObject *sci, gint pos, gchar c)
 {
