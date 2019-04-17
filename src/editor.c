@@ -576,7 +576,7 @@ static void check_line_breaking(GeanyEditor *editor, gint pos)
 			/* break the line after the space */
 			sci_set_current_position(sci, pos + 1, FALSE);
 			sci_cancel(sci);	/* don't select from completion list */
-			sci_send_command(sci, SCI_NEWLINE);
+			sci_new_line(sci);
 			line++;
 
 			/* correct cursor position (might not be at line end) */
@@ -1304,10 +1304,25 @@ static void on_new_line_added(GeanyEditor *editor)
 	ScintillaObject *sci = editor->sci;
 	gint line = sci_get_current_line(sci);
 
+
 	/* simple indentation */
-	if (editor->auto_indent)
-	{
+	if (editor->auto_indent) {
+
+		gint pos = sci_get_current_position(sci);
+		gchar cPrev = sci_get_eol_mode(sci) == SC_EOL_CRLF ?
+			sci_get_char_at( sci, pos-3) :
+			sci_get_char_at( sci, pos-2);
+		gchar cNext = sci_get_char_at( sci, pos);
+
 		insert_indent_after_line(editor, line - 1);
+
+		/* Nice bracket handling */
+		if (cPrev == '{' && cNext  == '}') {
+			pos = sci_get_current_position(sci);
+			sci_new_line(sci);
+			close_block(editor, sci_get_current_position(sci));
+			sci_set_current_position(sci, pos, TRUE);
+		}
 	}
 
 	if (get_project_pref(auto_continue_multiline))
@@ -1537,23 +1552,23 @@ static gboolean auto_close_chars_consume(ScintillaObject *sci, gint pos, gchar c
 	switch (c)
 	{
 		case ')':
-			if (editor_prefs.autoclose_chars_consume & GEANY_AC_PARENTHESIS)
+			if (editor_prefs.autoclose_chars & GEANY_AC_PARENTHESIS)
 				isAutoClosed = TRUE;
 			break;
 		case '}':
-			if (editor_prefs.autoclose_chars_consume & GEANY_AC_CBRACKET)
+			if (editor_prefs.autoclose_chars & GEANY_AC_CBRACKET)
 				isAutoClosed = TRUE;
 			break;
 		case ']':
-			if (editor_prefs.autoclose_chars_consume & GEANY_AC_SBRACKET)
+			if (editor_prefs.autoclose_chars & GEANY_AC_SBRACKET)
 				isAutoClosed = TRUE;
 			break;
 		case '\'':
-			if (editor_prefs.autoclose_chars_consume & GEANY_AC_SQUOTE)
+			if (editor_prefs.autoclose_chars & GEANY_AC_SQUOTE)
 				isAutoClosed = TRUE;
 			break;
 		case '"':
-			if (editor_prefs.autoclose_chars_consume & GEANY_AC_DQUOTE)
+			if (editor_prefs.autoclose_chars & GEANY_AC_DQUOTE)
 				isAutoClosed = TRUE;
 			break;
 	}
@@ -1571,23 +1586,19 @@ static gboolean auto_close_chars_consume(ScintillaObject *sci, gint pos, gchar c
 static void auto_close_chars(ScintillaObject *sci, gint pos, gchar c)
 {
 	const gchar *closing_char = NULL;
-	gint end_pos = -1;
-
-	if (utils_isbrace(c, 0))
-		end_pos = sci_find_matching_brace(sci, pos - 1);
 
 	switch (c)
 	{
 		case '(':
-			if ((editor_prefs.autoclose_chars & GEANY_AC_PARENTHESIS) && (end_pos == -1 || (editor_prefs.autoclose_chars_consume & GEANY_AC_PARENTHESIS)))
+			if (editor_prefs.autoclose_chars & GEANY_AC_PARENTHESIS)
 				closing_char = ")";
 			break;
 		case '{':
-			if ((editor_prefs.autoclose_chars & GEANY_AC_CBRACKET) && (end_pos == -1 || (editor_prefs.autoclose_chars_consume & GEANY_AC_CBRACKET)))
+			if (editor_prefs.autoclose_chars & GEANY_AC_CBRACKET)
 				closing_char = "}";
 			break;
 		case '[':
-			if ((editor_prefs.autoclose_chars & GEANY_AC_SBRACKET) && (end_pos == -1 || (editor_prefs.autoclose_chars_consume & GEANY_AC_SBRACKET)))
+			if (editor_prefs.autoclose_chars & GEANY_AC_SBRACKET)
 				closing_char = "]";
 			break;
 		case '\'':

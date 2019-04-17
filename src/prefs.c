@@ -672,26 +672,6 @@ static void prefs_init_dialog(void)
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget),
 		(editor_prefs.autoclose_chars & GEANY_AC_DQUOTE));
 
-	widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_parenthesis");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget),
-		(editor_prefs.autoclose_chars_consume & GEANY_AC_PARENTHESIS));
-
-	widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_cbracket");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget),
-		(editor_prefs.autoclose_chars_consume & GEANY_AC_CBRACKET));
-
-	widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_sbracket");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget),
-		(editor_prefs.autoclose_chars_consume & GEANY_AC_SBRACKET));
-
-	widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_squote");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget),
-		(editor_prefs.autoclose_chars_consume & GEANY_AC_SQUOTE));
-
-	widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_dquote");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget),
-		(editor_prefs.autoclose_chars_consume & GEANY_AC_DQUOTE));
-
 	/* Tools Settings */
 
 	if (tool_prefs.term_cmd)
@@ -892,7 +872,6 @@ on_prefs_dialog_response(GtkDialog *dialog, gint response, gpointer user_data)
 		GtkWidget *widget;
 		guint i;
 		gboolean autoclose_brackets[5];
-		gboolean autoclose_consume_brackets[5];
 		gboolean old_invert_all = interface_prefs.highlighting_invert_all;
 		gboolean old_sidebar_pos = interface_prefs.sidebar_pos;
 		GeanyDocument *doc = document_get_current();
@@ -1160,34 +1139,12 @@ on_prefs_dialog_response(GtkDialog *dialog, gint response, gpointer user_data)
 		widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_dquote");
 		autoclose_brackets[4] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 
-		widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_parenthesis");
-		autoclose_consume_brackets[0] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-
-		widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_cbracket");
-		autoclose_consume_brackets[1] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-
-		widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_sbracket");
-		autoclose_consume_brackets[2] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-
-		widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_squote");
-		autoclose_consume_brackets[3] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-
-		widget = ui_lookup_widget(ui_widgets.prefs_dialog, "check_autoclose_consume_dquote");
-		autoclose_consume_brackets[4] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
-
 		editor_prefs.autoclose_chars =
 		  (autoclose_brackets[0] ? GEANY_AC_PARENTHESIS : 0u)
 		| (autoclose_brackets[1] ? GEANY_AC_CBRACKET : 0u)
 		| (autoclose_brackets[2] ? GEANY_AC_SBRACKET : 0u)
 		| (autoclose_brackets[3] ? GEANY_AC_SQUOTE : 0u)
 		| (autoclose_brackets[4] ? GEANY_AC_DQUOTE : 0u);
-
-		editor_prefs.autoclose_chars_consume =
-		  (autoclose_consume_brackets[0] ? GEANY_AC_PARENTHESIS : 0u)
-		| (autoclose_consume_brackets[1] ? GEANY_AC_CBRACKET : 0u)
-		| (autoclose_consume_brackets[2] ? GEANY_AC_SBRACKET : 0u)
-		| (autoclose_consume_brackets[3] ? GEANY_AC_SQUOTE : 0u)
-		| (autoclose_consume_brackets[4] ? GEANY_AC_DQUOTE : 0u);
 
 		/* Tools Settings */
 
