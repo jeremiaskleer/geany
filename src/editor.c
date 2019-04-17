@@ -1562,6 +1562,7 @@ static gboolean auto_close_chars_consume(ScintillaObject *sci, gint pos, gchar c
 
 	if( isAutoClosed && cNext == c ) {
 		sci_delete_range(sci, pos, 1);
+		sci_colourise(sci, 0, -1);
 		return TRUE;
 	}
 	return FALSE;
