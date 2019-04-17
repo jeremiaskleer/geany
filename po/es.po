@@ -1,16 +1,16 @@
 # translation of es.po to
-# Spanish translation file for Geany 1.33
-# Copyright (C) 2006 The Geany contributors.
+# Spanish translation file for Geany 1.35
+# Copyright (C) 2006-2019 The Geany contributors.
 # This file is distributed under the same license as the geany package.
-# Damián Viano <des@damianv.com.ar>, 2006, 2007.
+# Damián Viano <des@damianv.com.ar>, 2006 - 2007.
 # Antonio Jiménez González <ajimenez@linuxmail.org>, 2009 - 2010.
-# Lucas Vieites <lucas.vieites@gmail.com>, 2010 - 2018.
+# Lucas Vieites <lucas.vieites@gmail.com>, 2010 - 2019.
 msgid ""
 msgstr ""
-"Project-Id-Version: Geany 1.34\n"
+"Project-Id-Version: Geany 1.35\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-03-29 11:24+0100\n"
-"PO-Revision-Date: 2018-12-05 15:34+0100\n"
+"POT-Creation-Date: 2019-04-16 02:36+0000\n"
+"PO-Revision-Date: 2019-04-16 11:34+0200\n"
 "Last-Translator: Lucas Vieites Fariña <lucas@codexion.com>\n"
 "Language-Team: Español <geany-i18n@uvena.de>\n"
 "Language: es\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Geany 1.32\n"
+"X-Generator: Geany / PoHelper 1.34\n"
 
 #: ../geany.desktop.in.h:1 ../data/geany.glade.h:343
 msgid "Geany"
@@ -2278,6 +2278,8 @@ msgid ""
 "Copyright (c) 2005\n"
 "The Geany contributors"
 msgstr ""
+"Copyright (c) 2005\n"
+"The Geany contributors"
 
 #: ../src/about.c:169
 msgid "About Geany"
@@ -3227,7 +3229,7 @@ msgstr "Expresión regular incorrecta para el tipo de archivo %s: %s"
 msgid "untitled"
 msgstr "sin título"
 
-#: ../src/highlighting.c:1229 ../src/libmain.c:867 ../src/socket.c:169
+#: ../src/highlighting.c:1229 ../src/libmain.c:867 ../src/socket.c:170
 #: ../src/templates.c:231
 #, c-format
 msgid "Could not find file '%s'."
@@ -3800,11 +3802,11 @@ msgstr "Combinaciones de teclas"
 msgid "The following keyboard shortcuts are configurable:"
 msgstr "Los siguientes atajos de teclado son configurables:"
 
-#: ../src/keyfile.c:1032
+#: ../src/keyfile.c:1034
 msgid "Type here what you want, use it as a notice/scratch board"
 msgstr "Escriba aquí lo que desee, úselo como panel de notas o borrador"
 
-#: ../src/keyfile.c:1259
+#: ../src/keyfile.c:1261
 msgid "Failed to load one or more session files."
 msgstr "Error al cargar uno o más archivos de la sesión."
 
@@ -3977,16 +3979,20 @@ msgstr ""
 msgid "This is Geany %s."
 msgstr "Esto es Geany %s."
 
-#: ../src/libmain.c:1176
+#: ../src/libmain.c:1177
 #, c-format
 msgid "Configuration directory could not be created (%s)."
 msgstr "No se ha podido crear el directorio de configuración (%s)."
 
-#: ../src/libmain.c:1403
+#: ../src/libmain.c:1184
+msgid "IPC socket could not be created, see Help->Debug Messages for details."
+msgstr "No se ha podido crear el socket IPC, consulte Ayuda->Mensajes de depuración para obtener más información."
+
+#: ../src/libmain.c:1413
 msgid "Do you really want to quit?"
 msgstr "¿Está seguro de que desea salir?"
 
-#: ../src/libmain.c:1441
+#: ../src/libmain.c:1451
 msgid "Configuration files reloaded."
 msgstr "Archivos de configuración recargados."
 
@@ -4634,7 +4640,7 @@ msgid "Bad regex: %s"
 msgstr "Expresión regular incorrecta : %s"
 
 #. TODO maybe this message needs a rewording
-#: ../src/socket.c:235
+#: ../src/socket.c:236
 msgid ""
 "Geany tried to access the Unix Domain socket of another instance running as "
 "another user.\n"

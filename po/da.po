@@ -4,10 +4,10 @@
 # scootergrisen, 2018.
 msgid ""
 msgstr ""
-"Project-Id-Version: geany 1.34\n"
+"Project-Id-Version: geany 1.35\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-03-29 11:24+0100\n"
-"PO-Revision-Date: 2018-12-04 22:46+0200\n"
+"POT-Creation-Date: 2019-04-15 17:13+0200\n"
+"PO-Revision-Date: 2019-04-15 23:17+0200\n"
 "Last-Translator: scootergrisen\n"
 "Language-Team: Danish\n"
 "Language: da\n"
@@ -2227,6 +2227,8 @@ msgid ""
 "Copyright (c) 2005\n"
 "The Geany contributors"
 msgstr ""
+"Ophavsret (c) 2005\n"
+"Geany-bidragsyderne"
 
 #: ../src/about.c:169
 msgid "About Geany"
@@ -3169,7 +3171,7 @@ msgstr "Dårligt regulært udtryk for filtypen %s: %s"
 msgid "untitled"
 msgstr "unavngivet"
 
-#: ../src/highlighting.c:1229 ../src/libmain.c:867 ../src/socket.c:169
+#: ../src/highlighting.c:1229 ../src/libmain.c:867 ../src/socket.c:170
 #: ../src/templates.c:231
 #, c-format
 msgid "Could not find file '%s'."
@@ -3741,11 +3743,11 @@ msgstr "Tastaturgenveje"
 msgid "The following keyboard shortcuts are configurable:"
 msgstr "Følgende tastaturgenveje kan konfigureres:"
 
-#: ../src/keyfile.c:1032
+#: ../src/keyfile.c:1034
 msgid "Type here what you want, use it as a notice/scratch board"
 msgstr "Her kan du skrive hvad du vil, brug det som en opslagstavle/tegneplade"
 
-#: ../src/keyfile.c:1259
+#: ../src/keyfile.c:1261
 msgid "Failed to load one or more session files."
 msgstr "Kunne ikke indlæse en eller flere sessionsfiler."
 
@@ -3908,16 +3910,20 @@ msgstr ""
 msgid "This is Geany %s."
 msgstr "Dette er Geany %s."
 
-#: ../src/libmain.c:1176
+#: ../src/libmain.c:1177
 #, c-format
 msgid "Configuration directory could not be created (%s)."
 msgstr "Konfigurationsmappen kunne ikke oprettes (%s)."
 
-#: ../src/libmain.c:1403
+#: ../src/libmain.c:1184
+msgid "IPC socket could not be created, see Help->Debug Messages for details."
+msgstr "IPC-soklen kunne ikke oprettes, se Hjælp->Fejlretningsmeddelelser for detaljer."
+
+#: ../src/libmain.c:1413
 msgid "Do you really want to quit?"
 msgstr "Vil du virkelig afslutte?"
 
-#: ../src/libmain.c:1441
+#: ../src/libmain.c:1451
 msgid "Configuration files reloaded."
 msgstr "Konfigurationsfilerne blev genindlæst."
 
@@ -4559,7 +4565,7 @@ msgid "Bad regex: %s"
 msgstr "Dårligt regulært udtryk: %s"
 
 #. TODO maybe this message needs a rewording
-#: ../src/socket.c:235
+#: ../src/socket.c:236
 msgid ""
 "Geany tried to access the Unix Domain socket of another instance running as "
 "another user.\n"
@@ -5985,20 +5991,3 @@ msgstr "Side om side"
 #: ../plugins/splitwindow.c:467
 msgid "Top and Bottom"
 msgstr "Øverst og nederst"
-
-#~ msgid ""
-#~ "Copyright (c) 2005-2019\n"
-#~ "Colomban Wendling\n"
-#~ "Nick Treleaven\n"
-#~ "Matthew Brush\n"
-#~ "Enrico Tröger\n"
-#~ "Frank Lanitz\n"
-#~ "All rights reserved."
-#~ msgstr ""
-#~ "Ophavsret (c) 2005-2019\n"
-#~ "Colomban Wendling\n"
-#~ "Nick Treleaven\n"
-#~ "Matthew Brush\n"
-#~ "Enrico Tröger\n"
-#~ "Frank Lanitz\n"
-#~ "Alle rettigheder forbeholdes."
