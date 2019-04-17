@@ -1056,6 +1056,12 @@ void sci_selection_duplicate(ScintillaObject *sci)
 }
 
 
+void sci_new_line(ScintillaObject *sci)
+{
+	SSM(sci, SCI_NEWLINE, 0, 0);
+}
+
+
 /** Inserts text.
  * @param sci Scintilla widget.
  * @param pos Position, or -1 for current.

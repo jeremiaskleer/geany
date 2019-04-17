@@ -573,7 +573,7 @@ static void check_line_breaking(GeanyEditor *editor, gint pos)
 			/* break the line after the space */
 			sci_set_current_position(sci, pos + 1, FALSE);
 			sci_cancel(sci);	/* don't select from completion list */
-			sci_send_command(sci, SCI_NEWLINE);
+			sci_new_line(sci);
 			line++;
 
 			/* correct cursor position (might not be at line end) */
@@ -1289,9 +1289,23 @@ static void on_new_line_added(GeanyEditor *editor)
 	gint line = sci_get_current_line(sci);
 
 	/* simple indentation */
-	if (editor->auto_indent)
-	{
-		insert_indent_after_line(editor, line - 1);
+	if (editor->auto_indent) {
+
+		gint pos = sci_get_current_position(sci);
+		gchar cPrev = sci_get_eol_mode(sci) == SC_EOL_CRLF ?
+			sci_get_char_at( sci, pos-3) :
+			sci_get_char_at( sci, pos-2);
+		gchar cNext = sci_get_char_at( sci, pos);
+
+ 		insert_indent_after_line(editor, line - 1);
+
+		/* Nice bracket handling */
+		if (cPrev == '{' && cNext  == '}') {
+			pos = sci_get_current_position(sci);
+			sci_new_line(sci);
+			close_block(editor, sci_get_current_position(sci));
+			sci_set_current_position(sci, pos, TRUE);
+		}
 	}
 
 	if (get_project_pref(auto_continue_multiline))
