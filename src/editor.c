@@ -59,6 +59,8 @@
 
 #include "gtkcompat.h"
 
+
+
 #include <ctype.h>
 #include <string.h>
 
@@ -97,6 +99,7 @@ static gboolean handle_xml(GeanyEditor *editor, gint pos, gchar ch);
 static void insert_indent_after_line(GeanyEditor *editor, gint line);
 static void auto_multiline(GeanyEditor *editor, gint pos);
 static void auto_close_chars(ScintillaObject *sci, gint pos, gchar c);
+static gboolean auto_close_chars_consume(ScintillaObject *sci, gint pos, gchar c);
 static void close_block(GeanyEditor *editor, gint pos);
 static void editor_highlight_braces(GeanyEditor *editor, gint cur_pos);
 static void read_current_word(GeanyEditor *editor, gint pos, gchar *word, gsize wordlen,
@@ -832,8 +835,15 @@ static void on_char_added(GeanyEditor *editor, SCNotification *nt)
 			editor_show_calltip(editor, --pos);
 			break;
 		}
+		case '{':
+		case '[':
+		{
+			auto_close_chars(sci, pos, nt->ch);
+			break;
+		}
 		case ')':
-		{	/* hide calltips */
+		{
+			/* hide calltips */
 			if (SSM(sci, SCI_CALLTIPACTIVE, 0, 0))
 			{
 				SSM(sci, SCI_CALLTIPCANCEL, 0, 0);
@@ -843,20 +853,26 @@ static void on_char_added(GeanyEditor *editor, SCNotification *nt)
 			calltip.pos = 0;
 			calltip.sci = NULL;
 			calltip.set = FALSE;
-			break;
 		}
-		case '{':
-		case '[':
-		case '"':
-		case '\'':
+		case ']':
 		{
-			auto_close_chars(sci, pos, nt->ch);
+			auto_close_chars_consume(sci, pos, nt->ch);
 			break;
 		}
 		case '}':
-		{	/* closing bracket handling */
+		{
+			auto_close_chars_consume(sci, pos, nt->ch);
+			/* closing bracket handling */
 			if (editor->auto_indent)
 				close_block(editor, pos - 1);
+			break;
+		}
+		case '"':
+		case '\'':
+		{
+			if( ! auto_close_chars_consume(sci, pos, nt->ch) ) {
+				auto_close_chars(sci, pos, nt->ch);
+			}
 			break;
 		}
 		/* scope autocompletion */
@@ -1288,10 +1304,14 @@ static void on_new_line_added(GeanyEditor *editor)
 	ScintillaObject *sci = editor->sci;
 	gint line = sci_get_current_line(sci);
 
+
 	/* simple indentation */
+
 	if (editor->auto_indent)
 	{
 		insert_indent_after_line(editor, line - 1);
+
+		/* Nice bracket handling */
 	}
 
 	if (get_project_pref(auto_continue_multiline))
@@ -1516,27 +1536,58 @@ static void insert_indent_after_line(GeanyEditor *editor, gint line)
 	g_free(text);
 }
 
+static gboolean auto_close_chars_consume(ScintillaObject *sci, gint pos, gchar c) {
+	gboolean isAutoClosed = FALSE;
+	switch (c)
+	{
+		case ')':
+			if (editor_prefs.autoclose_chars & GEANY_AC_PARENTHESIS)
+				isAutoClosed = TRUE;
+			break;
+		case '}':
+			if (editor_prefs.autoclose_chars & GEANY_AC_CBRACKET)
+				isAutoClosed = TRUE;
+			break;
+		case ']':
+			if (editor_prefs.autoclose_chars & GEANY_AC_SBRACKET)
+				isAutoClosed = TRUE;
+			break;
+		case '\'':
+			if (editor_prefs.autoclose_chars & GEANY_AC_SQUOTE)
+				isAutoClosed = TRUE;
+			break;
+		case '"':
+			if (editor_prefs.autoclose_chars & GEANY_AC_DQUOTE)
+				isAutoClosed = TRUE;
+			break;
+	}
+
+	gchar cNext = sci_get_char_at( sci, pos);
+
+	if( isAutoClosed && cNext == c ) {
+		sci_delete_range(sci, pos, 1);
+		sci_colourise(sci, 0, -1);
+		return TRUE;
+	}
+	return FALSE;
+}
 
 static void auto_close_chars(ScintillaObject *sci, gint pos, gchar c)
 {
 	const gchar *closing_char = NULL;
-	gint end_pos = -1;
-
-	if (utils_isbrace(c, 0))
-		end_pos = sci_find_matching_brace(sci, pos - 1);
 
 	switch (c)
 	{
 		case '(':
-			if ((editor_prefs.autoclose_chars & GEANY_AC_PARENTHESIS) && end_pos == -1)
+			if (editor_prefs.autoclose_chars & GEANY_AC_PARENTHESIS)
 				closing_char = ")";
 			break;
 		case '{':
-			if ((editor_prefs.autoclose_chars & GEANY_AC_CBRACKET) && end_pos == -1)
+			if (editor_prefs.autoclose_chars & GEANY_AC_CBRACKET)
 				closing_char = "}";
 			break;
 		case '[':
-			if ((editor_prefs.autoclose_chars & GEANY_AC_SBRACKET) && end_pos == -1)
+			if (editor_prefs.autoclose_chars & GEANY_AC_SBRACKET)
 				closing_char = "]";
 			break;
 		case '\'':
