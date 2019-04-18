@@ -1333,25 +1333,21 @@ static void on_new_line_added(GeanyEditor *editor)
 		if (doHandleBracket) {
 			const GeanyIndentPrefs * iprefs = editor_get_indent_prefs(editor);
 
-			gint posBaseMultilineComment = sci_get_col_from_position(sci);
+			gint posBaseMultilineComment = sci_get_current_position(sci);
+			gint colBaseMultilineComment = sci_get_col_from_position(sci, posBaseMultilineComment);
 			gint line = sci_get_line_from_position(sci, posBaseMultilineComment);
-			gint posLinePrevStart = sci_get_line_end_position
+			gint linePrev = line-1;
+			gint posPrevLineCommentStart = sci_get_position_from_col(sci, linePrev, colBaseMultilineComment );
+			gint posPrevLineLineEnd = sci_get_line_end_position(sci, linePrev);
 			struct Sci_TextToFind ttf;
 
-
-			len = sci_get_length(sci);
-			current = sci_get_current_position(sci) - rootlen;
-
 			ttf.lpstrText = (gchar*) "\\<";
-			ttf.chrg.cpMin = sci_get_selection_start(editor->sci);
-			ttf.chrg.cpMax = sci_get_selection_end(editor->sci);
+			ttf.chrg.cpMin = posPrevLineCommentStart;
+			ttf.chrg.cpMax = posPrevLineLineEnd;
 
-			ttf.lpstrText = root;
-			ttf.chrg.cpMin = 0;
-			ttf.chrg.cpMax = len;
 			ttf.chrgText.cpMin = 0;
 			ttf.chrgText.cpMax = 0;
-			flags = SCFIND_WORDSTART | SCFIND_REGEXP;
+			flags = SCFIND_REGEXP;
 
 			/* search the whole document for the word root and collect results */
 			sci_find_text(sci, 0, )
