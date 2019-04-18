@@ -1304,36 +1304,85 @@ static void on_new_line_added(GeanyEditor *editor)
 	ScintillaObject *sci = editor->sci;
 	gint line = sci_get_current_line(sci);
 
+	gboolean doHandleBracket = FALSE;
+	gboolean bracketHandled = FALSE;
+	gint posStart;
+	gint posBracketStart;
 
 	/* simple indentation */
 	if (editor->auto_indent) {
 
-		gint pos = sci_get_current_position(sci);
-		gchar cPrev = sci_get_eol_mode(sci) == SC_EOL_CRLF ?
-			sci_get_char_at( sci, pos-3) :
-			sci_get_char_at( sci, pos-2);
-		gchar cNext = sci_get_char_at( sci, pos);
+		posStart = sci_get_current_position(sci);
+		posBracketStart = posStart-(sci_get_eol_mode(sci) == SC_EOL_CRLF ? 3 : 2);
+		gchar cPrev = sci_get_char_at( sci, posBracketStart);
+		gchar cNext = sci_get_char_at( sci, posStart);
 
 		insert_indent_after_line(editor, line - 1);
 
 		/* Nice bracket handling */
 		if (cPrev == '{' && cNext  == '}') {
-			pos = sci_get_current_position(sci);
-			sci_new_line(sci);
-			close_block(editor, sci_get_current_position(sci));
-			sci_set_current_position(sci, pos, TRUE);
+			posStart = sci_get_current_position(sci);
+			doHandleBracket = TRUE;
 		}
 	}
 
 	if (get_project_pref(auto_continue_multiline))
 	{	/* " * " auto completion in multiline C/C++/D/Java comments */
-		auto_multiline(editor, line);
-	}
 
-	if (editor_prefs.newline_strip)
+		auto_multiline(editor, line);
+		if (doHandleBracket) {
+			const GeanyIndentPrefs * iprefs = editor_get_indent_prefs(editor);
+
+			gint posBaseMultilineComment = sci_get_col_from_position(sci);
+			gint line = sci_get_line_from_position(sci, posBaseMultilineComment);
+			gint posLinePrevStart = sci_get_line_end_position
+			struct Sci_TextToFind ttf;
+
+
+			len = sci_get_length(sci);
+			current = sci_get_current_position(sci) - rootlen;
+
+			ttf.lpstrText = (gchar*) "\\<";
+			ttf.chrg.cpMin = sci_get_selection_start(editor->sci);
+			ttf.chrg.cpMax = sci_get_selection_end(editor->sci);
+
+			ttf.lpstrText = root;
+			ttf.chrg.cpMin = 0;
+			ttf.chrg.cpMax = len;
+			ttf.chrgText.cpMin = 0;
+			ttf.chrgText.cpMax = 0;
+			flags = SCFIND_WORDSTART | SCFIND_REGEXP;
+
+			/* search the whole document for the word root and collect results */
+			sci_find_text(sci, 0, )
+			while (pos_find >= 0 && pos_find < len) {
+				}
+
+			bracketHandled = TRUE;
+		}
+	}
+	/*
+	 * if(boy) {
+
+ }
+	 * sci_p
+	 *
+	 *
+	 *
+	 */
+
+	if (editor_prefs.newline_strip && !doHandleBracket)
 	{	/* strip the trailing spaces on the previous line */
 		editor_strip_line_trailing_spaces(editor, line - 1);
 	}
+
+	if (doHandleBracket && !bracketHandled) {
+		sci_new_line(sci);
+		close_block(editor, sci_get_current_position(sci));
+		sci_set_current_position(sci, posStart, TRUE);
+		bracketHandled = TRUE;
+	}
+
 }
 
 
