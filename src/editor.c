@@ -97,7 +97,7 @@ static gchar indent[100];
 static void on_new_line_added(GeanyEditor *editor);
 static gboolean handle_xml(GeanyEditor *editor, gint pos, gchar ch);
 static void insert_indent_after_line(GeanyEditor *editor, gint line);
-static void auto_multiline(GeanyEditor *editor, gint pos);
+static gboolean auto_multiline(GeanyEditor *editor, gint pos, gboolean forceIgnoreLexer);
 static void auto_close_chars(ScintillaObject *sci, gint pos, gchar c);
 static gboolean auto_close_chars_consume(ScintillaObject *sci, gint pos, gchar c);
 static void close_block(GeanyEditor *editor, gint pos);
@@ -1302,7 +1302,7 @@ editor_get_indent_prefs(GeanyEditor *editor)
 static void on_new_line_added(GeanyEditor *editor)
 {
 	ScintillaObject *sci = editor->sci;
-	gint line = sci_get_current_line(sci);
+	const gint line = sci_get_current_line(sci);
 
 	gboolean doHandleBracket = FALSE;
 	gboolean bracketHandled = FALSE;
@@ -1328,77 +1328,69 @@ static void on_new_line_added(GeanyEditor *editor)
 
 	if (get_project_pref(auto_continue_multiline))
 	{	/* " * " auto completion in multiline C/C++/D/Java comments */
-
-		auto_multiline(editor, line);
-		if (doHandleBracket) {
+		if (auto_multiline(editor, line, FALSE) && doHandleBracket) {
 			const gint posBaseMultilineComment = sci_get_current_position(sci);
 			const gint colBaseMultilineComment = sci_get_col_from_position(sci, posBaseMultilineComment);
-
-			const gint line = sci_get_line_from_position(sci, posBaseMultilineComment);
 			const gint linePrev = line-1;
 
-			const gint posPrevLineCommentStart = sci_get_position_from_col(sci, linePrev, colBaseMultilineComment );
-			const gint posPrevLineLineEnd = sci_get_line_end_position(sci, linePrev);
-
+			/* search for whitespaces between "*" in the multiline comment
+			 * and text start of the prevous line, to apply to this and the next line */
 			struct Sci_TextToFind ttf;
-			ttf.lpstrText = (gchar*) "\\<";
-			ttf.chrg.cpMin = posPrevLineCommentStart;
-			ttf.chrg.cpMax = posPrevLineLineEnd;
+			ttf.lpstrText = (gchar*) "\\s*";
+			ttf.chrg.cpMin = sci_get_position_from_col(sci, linePrev, colBaseMultilineComment );
+			ttf.chrg.cpMax = sci_get_line_end_position(sci, linePrev);
 			ttf.chrgText.cpMin = 0;
 			ttf.chrgText.cpMax = 0;
 			const gint flags = SCFIND_REGEXP;
 
-			/* search the whole document for the word root and collect results */
-			const gint posPrevLineContentStart = sci_find_text(sci, flags, &ttf );
-
-			if (posPrevLineContentStart != -1) {
-				gchar copyChar;
-				for (gint i=posPrevLineCommentStart; i<posPrevLineContentStart; ++i) {
-					copyChar = sci_get_char_at(sci,i);
-					sci_add_text(sci, &copyChar);
-				}
-
-				const GeanyIndentPrefs * iprefs = editor_get_indent_prefs(editor);
-				if (iprefs->type == GEANY_INDENT_TYPE_TABS) {
-					sci_add_text(sci, "\t");
-				} else {
-					for (gint i=0; i<iprefs->hard_tab_width; ++i) {
-						sci_add_text(sci, " ");
-					}
-				}
+			gboolean foundWhitespaces = sci_find_text(sci, flags, &ttf ) != -1;
+			const gint sizeWhitespaces = ttf.chrgText.cpMax - ttf.chrgText.cpMin;
+			gchar * whitespaceText = 0;
+			gboolean insertWhitespaceText = foundWhitespaces && sizeWhitespaces>0;
+			if (insertWhitespaceText) {
+				whitespaceText = sci_get_contents_range(sci, ttf.chrgText.cpMin, ttf.chrgText.cpMax);
+				sci_add_text(sci, whitespaceText);
 			}
-			const gint posBackAfterNewline = sci_get_current_position(sci);
-			sci_new_line(sci);
-			auto_multiline(editor, line+1);
-			sci_set_current_position(sci, posBackAfterNewline, TRUE);
 
+			// Add one "tab"
+			const GeanyIndentPrefs *iprefs = editor_get_indent_prefs(editor);
+			sci_add_text(sci, get_whitespace(iprefs, get_tab_width(iprefs)));
+
+			// Insert newline before the closing } and apply multiline comment
+			const gint posBackAfterNewline = sci_get_current_position(sci);
+			sci_add_text(sci, editor_get_eol_char(editor));
+			insert_indent_after_line(editor, line); // editor->auto_indent == true if doHandleBracket == true
+			auto_multiline(editor, line+1, TRUE);
+
+			if (insertWhitespaceText) {
+				sci_add_text(sci, whitespaceText);
+			}
+			if (whitespaceText != 0) {
+				g_free(whitespaceText);
+			}
+			sci_set_current_position(sci, posBackAfterNewline, TRUE);
 			bracketHandled = TRUE;
 		}
 	}
-	/*
-	 * if(boy) {
-
- }
-	 * sci_p
-	 *
-	 *
-	 *
-	 */
 
 	if (editor_prefs.newline_strip && !doHandleBracket)
-	{	/* strip the trailing spaces on the previous line */
+	{	/* strip the trailing spaces on the previous line
+		 * if doHandleBracket == true, the previous line ends with {
+		 */
 		editor_strip_line_trailing_spaces(editor, line - 1);
 	}
 
+	/* Nice bracket handling here iff no multi-line-comment which
+	 * must handle it in a more complex way
+	 */
 	if (doHandleBracket && !bracketHandled) {
-		sci_new_line(sci);
+		sci_add_text(sci, editor_get_eol_char(editor));
+		insert_indent_after_line(editor, line); // editor->auto_indent == true if doHandleBracket == true
 		close_block(editor, sci_get_current_position(sci));
 		sci_set_current_position(sci, posStart, TRUE);
 		bracketHandled = TRUE;
 	}
-
 }
-
 
 static gboolean lexer_has_braces(ScintillaObject *sci)
 {
@@ -3640,7 +3632,7 @@ static gboolean is_comment_char(gchar c, gint lexer)
 }
 
 
-static void auto_multiline(GeanyEditor *editor, gint cur_line)
+static gboolean auto_multiline(GeanyEditor *editor, gint cur_line, gboolean forceIgnoreLexer)
 {
 	ScintillaObject *sci = editor->sci;
 	gint indent_pos, style;
@@ -3649,12 +3641,12 @@ static void auto_multiline(GeanyEditor *editor, gint cur_line)
 	/* Use the start of the line enter was pressed on, to avoid any doc keyword styles */
 	indent_pos = sci_get_line_indent_position(sci, cur_line - 1);
 	style = sci_get_style_at(sci, indent_pos);
-	if (!in_block_comment(lexer, style))
-		return;
+	if (!forceIgnoreLexer && !in_block_comment(lexer, style))
+		return FALSE;
 
 	/* Check whether the comment block continues on this line */
 	indent_pos = sci_get_line_indent_position(sci, cur_line);
-	if (sci_get_style_at(sci, indent_pos) == style || indent_pos >= sci_get_length(sci))
+	if ((forceIgnoreLexer || sci_get_style_at(sci, indent_pos) == style) || indent_pos >= sci_get_length(sci))
 	{
 		gchar *previous_line = sci_get_line(sci, cur_line - 1);
 		/* the type of comment, '*' (C/C++/Java), '+' and the others (D) */
@@ -3680,7 +3672,7 @@ static void auto_multiline(GeanyEditor *editor, gint cur_line)
 			if (indent_len % indent_width == 1)
 				SSM(sci, SCI_DELETEBACKNOTLINE, 0, 0);	/* remove whitespace indent */
 			g_free(previous_line);
-			return;
+			return TRUE;
 		}
 		/* check whether we are on the second line of multi line comment */
 		i = 0;
@@ -3700,9 +3692,10 @@ static void auto_multiline(GeanyEditor *editor, gint cur_line)
 		g_free(result);
 
 		g_free(previous_line);
+		return TRUE;
 	}
+	return FALSE;
 }
-
 
 #if 0
 static gboolean editor_lexer_is_c_like(gint lexer)
