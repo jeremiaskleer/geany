@@ -1331,28 +1331,46 @@ static void on_new_line_added(GeanyEditor *editor)
 
 		auto_multiline(editor, line);
 		if (doHandleBracket) {
-			const GeanyIndentPrefs * iprefs = editor_get_indent_prefs(editor);
+			const gint posBaseMultilineComment = sci_get_current_position(sci);
+			const gint colBaseMultilineComment = sci_get_col_from_position(sci, posBaseMultilineComment);
 
-			gint posBaseMultilineComment = sci_get_current_position(sci);
-			gint colBaseMultilineComment = sci_get_col_from_position(sci, posBaseMultilineComment);
-			gint line = sci_get_line_from_position(sci, posBaseMultilineComment);
-			gint linePrev = line-1;
-			gint posPrevLineCommentStart = sci_get_position_from_col(sci, linePrev, colBaseMultilineComment );
-			gint posPrevLineLineEnd = sci_get_line_end_position(sci, linePrev);
+			const gint line = sci_get_line_from_position(sci, posBaseMultilineComment);
+			const gint linePrev = line-1;
+
+			const gint posPrevLineCommentStart = sci_get_position_from_col(sci, linePrev, colBaseMultilineComment );
+			const gint posPrevLineLineEnd = sci_get_line_end_position(sci, linePrev);
+
 			struct Sci_TextToFind ttf;
-
 			ttf.lpstrText = (gchar*) "\\<";
 			ttf.chrg.cpMin = posPrevLineCommentStart;
 			ttf.chrg.cpMax = posPrevLineLineEnd;
-
 			ttf.chrgText.cpMin = 0;
 			ttf.chrgText.cpMax = 0;
-			flags = SCFIND_REGEXP;
+			const gint flags = SCFIND_REGEXP;
 
 			/* search the whole document for the word root and collect results */
-			sci_find_text(sci, 0, )
-			while (pos_find >= 0 && pos_find < len) {
+			const gint posPrevLineContentStart = sci_find_text(sci, flags, &ttf );
+
+			if (posPrevLineContentStart != -1) {
+				gchar copyChar;
+				for (gint i=posPrevLineCommentStart; i<posPrevLineContentStart; ++i) {
+					copyChar = sci_get_char_at(sci,i);
+					sci_add_text(sci, &copyChar);
 				}
+
+				const GeanyIndentPrefs * iprefs = editor_get_indent_prefs(editor);
+				if (iprefs->type == GEANY_INDENT_TYPE_TABS) {
+					sci_add_text(sci, "\t");
+				} else {
+					for (gint i=0; i<iprefs->hard_tab_width; ++i) {
+						sci_add_text(sci, " ");
+					}
+				}
+			}
+			const gint posBackAfterNewline = sci_get_current_position(sci);
+			sci_new_line(sci);
+			auto_multiline(editor, line+1);
+			sci_set_current_position(sci, posBackAfterNewline, TRUE);
 
 			bracketHandled = TRUE;
 		}
